@@ -1,162 +1,41 @@
-const router = require('express').Router();
-const { User, Post, Comment } = require('../../models');
-router.get('/', (req, res) => {
-    User.findAll({
-            attributes: { exclude: ['[password'] }
-        })
-        .then(dbUserData => res.json(dbUserData))
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
+const router=require("express")
+.Router(),{User:User,Post:Post,Comment:Comment}=require("../../models");
 
-router.get('/:id', (req, res) => {
-    User.findOne({
-            attributes: { exclude: ['password'] },
-            where: {
-                id: req.params.id
-            },
-            include: [{
-                    model: Post,
-                    attributes: [
-                        'id',
-                        'title',
-                        'content',
-                        'created_at'
-                    ]
-                },
+router.get("/",(s,e)=>{User.findAll({attributes:{exclude:["[password"]}})
+.then(s=>e.json(s))
+.catch(s=>{console.log(s),e.status(500).json(s)})}),
 
-                {
-                    model: Comment,
-                    attributes: ['id', 'comment_text', 'created_at'],
-                    include: {
-                        model: Post,
-                        attributes: ['title']
-                    }
-                },
-                {
-                    model: Post,
-                    attributes: ['title'],
-                }
-            ]
-        })
-        .then(dbUserData => {
-            if (!dbUserData) {
-                res.status(404).json({ message: 'No user found with this id' });
-                return;
-            }
-            res.json(dbUserData);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
+router.get("/:id",(s,e)=>
+{User.findOne({attributes:{exclude:["password"]},
+where:{id:s.params.id},
+include:[{model:Post,attributes:["id","title","content","created_at"]},
+{model:Comment,attributes:["id","comment_text","created_at"],
 
+include:{model:Post,attributes:["title"]}},
+{model:Post,attributes:["title"]}]})
 
-router.post('/', (req, res) => {
+.then(s=>{s?e.json(s):e.status(404).json({message:"No user found with this id"})})
+.catch(s=>{console.log(s),e.status(500).json(s)})}),
 
-    User.create({
-        username: req.body.username,
-        password: req.body.password
-    })
+router.post("/",(s,e)=>{User.create({username:s.body.username,password:s.body.password})
+.then(t=>{s.session.save(()=>{s.session.user_id=t.id,s.session.username=t.username,s.session.loggedIn=!0,e.json(t)})})
+.catch(s=>{console.log(s),e.status(500).json(s)})}),
 
-    .then(dbUserData => {
-            req.session.save(() => {
-                req.session.user_id = dbUserData.id;
-                req.session.username = dbUserData.username;
-                req.session.loggedIn = true;
-
-                res.json(dbUserData);
-            });
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
-
-router.post('/login', (req, res) => {
-    User.findOne({
-            where: {
-                username: req.body.username
-            }
-        }).then(dbUserData => {
-            if (!dbUserData) {
-                res.status(400).json({ message: 'No user with that username!' });
-                return;
-            }
-            const validPassword = dbUserData.checkPassword(req.body.password);
-
-            if (!validPassword) {
-                res.status(400).json({ message: 'Incorrect password!' });
-                return;
-            }
-            req.session.save(() => {
-
-                req.session.user_id = dbUserData.id;
-                req.session.username = dbUserData.username;
-                req.session.loggedIn = true;
-
-                res.json({ user: dbUserData, message: 'You are now logged in!' });
-            });
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
-
-router.post('/logout', (req, res) => {
-    if (req.session.loggedIn) {
-        req.session.destroy(() => {
-            res.status(204).end();
-        });
-    } else {
-        res.status(404).end();
-    }
-});
-
-router.put('/:id', (req, res) => {
-
-    User.update(req.body, {
-            individualHooks: true,
-            where: {
-                id: req.params.id
-            }
-        })
-        .then(dbUserData => {
-            if (!dbUserData[0]) {
-                res.status(404).json({ message: 'No user found with this id' });
-                return;
-            }
-            res.json(dbUserData);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-
-});
-
-router.delete('/:id', (req, res) => {
-    User.destroy({
-            where: {
-                id: req.params.id
-            }
-        })
-        .then(dbUserData => {
-            if (!dbUserData) {
-                res.status(404).json({ message: 'No user found with this id' });
-                return;
-            }
-            res.json(dbUserData);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(err);
-        });
-});
-
-module.exports = router;
+router.post("/login",(s,e)=>{User.findOne({where:{username:s.body.username}})
+.then(t=>{if(!t)
+    return void e.status(400).json({message:"No user with that username!"});
+    
+    t.checkPassword(s.body.password)?s.session.save(()=>{s.session.user_id=t.id,s.session.username=t.username,s.session.loggedIn=!0,e.json({user:t,message:"You are now logged in!"})}):e.status(400).json({message:"Incorrect password!"})})
+    .catch(s=>{console.log(s),e.status(500).json(s)})}),
+    
+    router.post("/logout",(s,e)=>{s.session.loggedIn?s.session.destroy(()=>{e.status(204).end()}):e.status(404).end()})
+   ,router.put("/:id",(s,e)=>{User.update(s.body,{individualHooks:!0,where:{id:s.params.id}})
+   
+   .then(s=>{s[0]?e.json(s):e.status(404).json({message:"No user found with this id"})})
+   .catch(s=>{console.log(s),e.status(500).json(s)})}),
+   
+   router.delete("/:id",(s,e)=>{User.destroy({where:{id:s.params.id}})
+   .then(s=>{s?e.json(s):e.status(404).json({message:"No user found with this id"})})
+   .catch(s=>{console.log(s),e.status(500).json(s)})}),
+   
+   module.exports=router;
