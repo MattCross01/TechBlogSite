@@ -1,29 +1,9 @@
-//  login submission 
-
-
-async function loginFormHandler(event) {
-    event.preventDefault();
+async function loginFormHandler(e){e.preventDefault();
+  const o=document.querySelector("#username-login").value.trim(),
   
-    const username = document.querySelector('#username-login').value.trim();
-    const password = document.querySelector('#password-login').value.trim();
-  
-    if (username && password) {
-      const response = await fetch('/api/users/login', {
-        method: 'post',
-        body: JSON.stringify({
-          username,
-          password
-        }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-  
-      if (response.ok) {
-        document.location.replace('/dashboard');
-      } else {
-        alert(response.statusText);
-      }
-    }
-  }
-  
-
-document.querySelector('#login-form').addEventListener('submit', loginFormHandler);
+  t=document.querySelector("#password-login").value.trim();
+  if(o&&t){const e=await fetch("/api/users/login",
+  {method:"post",body:JSON.stringify({username:o,password:t}),
+  headers:{"Content-Type":"application/json"}});
+  e.ok?document.location.replace("/dashboard"):alert(e.statusText)}}
+  document.querySelector("#login-form").addEventListener("submit",loginFormHandler);
